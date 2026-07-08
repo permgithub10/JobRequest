@@ -826,131 +826,398 @@ function openEditJob(idx) {
 // ---- Print Job Form ----
 function printJobForm(idx) {
   const r = jobData[idx];
-  const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html lang="th"><head>
-  <meta charset="UTF-8"/>
-  <title>FM-BD-009</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Sarabun','TH SarabunPSK',sans-serif;font-size:14px;color:#000;padding:20px;}
-    .page{max-width:740px;margin:0 auto;}
-    .header{text-align:center;margin-bottom:10px;}
-    .header h2{font-size:16px;font-weight:bold;}
-    .ref-box{float:right;border:1px solid #000;padding:6px 12px;font-size:12px;line-height:2;min-width:220px;}
-    .ref-box div{border-bottom:1px dotted #999;padding:2px 0;}
-    .clear{clear:both;}
-    .section-title{font-size:13px;font-weight:bold;text-decoration:underline;margin:12px 0 6px;}
-    .field-row{display:flex;gap:8px;margin-bottom:6px;align-items:baseline;flex-wrap:wrap;}
-    .field-label{white-space:nowrap;font-size:13px;}
-    .field-line{flex:1;border-bottom:1px dotted #555;min-width:80px;padding-bottom:1px;font-size:13px;}
-    .field-line.long{min-width:200px;}
-    .dotted-line{border-bottom:1px dotted #555;margin:4px 0;height:20px;padding-left:4px;font-size:13px;}
-    .sign-area{margin-top:20px;text-align:right;font-size:12px;line-height:2;}
-    .sign-line{border-bottom:1px dotted #555;display:inline-block;width:180px;}
-    .part-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #000;margin-top:14px;}
-    .part-box{padding:10px;border-right:1px solid #000;}
-    .part-box:last-child{border-right:none;}
-    .part-title{font-size:12px;font-weight:bold;text-decoration:underline;margin-bottom:8px;}
-    .img-area img{max-width:100%;max-height:160px;border:1px solid #ccc;margin-top:4px;}
-    @media print{@page{size:A4;margin:12mm;} body{padding:0;}}
-  </style></head><body>
-  <div class="page">
+
+  // แปลงวันที่เป็น dd/mm/yyyy สำหรับแสดงในฟอร์ม
+  function toSlash(d) {
+    if (!d) return '............/............/............';
+    return d.replace(/-/g, '/');
+  }
+
+  const w = window.open('', '_blank', 'width=900,height=1200');
+  w.document.write(`<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<title>FM-BD-009</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Sarabun', 'TH SarabunPSK', sans-serif;
+    font-size: 14pt;
+    color: #000;
+    background: #fff;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 15mm 18mm 12mm 18mm;
+    position: relative;
+  }
+
+  /* ===== Header ===== */
+  .header-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6pt;
+  }
+  .header-center {
+    text-align: center;
+    flex: 1;
+  }
+  .header-center .hospital-name {
+    font-size: 14pt;
+    margin-bottom: 3pt;
+  }
+  .header-center .form-title {
+    font-size: 15pt;
+    font-weight: bold;
+  }
+  .logo {
+    width: 60pt;
+    height: 60pt;
+    object-fit: contain;
+  }
+
+  /* กล่อง เลขที่ / ลงรับวันที่ / ผู้รับเรื่อง */
+  .ref-box {
+    border: 1pt solid #000;
+    min-width: 140pt;
+    font-size: 12pt;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .ref-row {
+    padding: 5pt 8pt;
+    border-bottom: 1pt solid #000;
+  }
+  .ref-row:last-child { border-bottom: none; }
+  .ref-label { display: block; margin-bottom: 6pt; }
+  .ref-val-line {
+    display: block;
+    border-bottom: 1pt dotted #555;
+    height: 10pt;
+  }
+
+  /* ===== Divider ===== */
+  .hline { border-top: 1pt solid #000; margin: 6pt 0; }
+
+  /* ===== Section title ===== */
+  .sec-title {
+    font-size: 14pt;
+    font-weight: bold;
+    text-decoration: underline;
+    margin: 8pt 0 5pt;
+  }
+
+  /* ===== Field rows ===== */
+  .field-line-block {
+    display: flex;
+    align-items: flex-end;
+    gap: 4pt;
+    margin-bottom: 6pt;
+    font-size: 14pt;
+  }
+  .fl-label { white-space: nowrap; flex-shrink: 0; }
+  .fl-val {
+    flex: 1;
+    border-bottom: 1pt dotted #555;
+    min-width: 40pt;
+    padding-bottom: 1pt;
+    line-height: 1.1;
+  }
+  .fl-val.narrow { flex: 0 0 60pt; }
+  .fl-val.medium { flex: 0 0 120pt; }
+  .fl-val.wide   { flex: 0 0 200pt; }
+
+  /* checkbox row */
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 20pt;
+    font-size: 14pt;
+    margin-bottom: 6pt;
+  }
+  .check-item { display: flex; align-items: center; gap: 4pt; }
+  .checkbox {
+    width: 10pt; height: 10pt;
+    border: 1pt solid #000;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12pt; flex-shrink: 0;
+  }
+
+  /* dotted write lines */
+  .write-line {
+    border-bottom: 1pt dotted #555;
+    height: 18pt;
+    margin-bottom: 4pt;
+    padding-left: 4pt;
+    font-size: 13pt;
+    display: flex;
+    align-items: flex-end;
+  }
+  .write-line-label {
+    font-size: 14pt;
+    margin-bottom: 2pt;
+  }
+
+  /* signature block */
+  .sign-block {
+    text-align: right;
+    font-size: 13pt;
+    line-height: 1.7;
+    margin-top: 10pt;
+  }
+  .sign-dotted {
+    display: inline-block;
+    border-bottom: 1pt dotted #555;
+    width: 160pt;
+    text-align: center;
+  }
+
+  /* ===== ส่วนที่ 3 & 4 ===== */
+  .part-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1pt solid #000;
+    margin-top: 10pt;
+  }
+  .part-cell {
+    padding: 8pt 10pt;
+    border-right: 1pt solid #000;
+    font-size: 13pt;
+  }
+  .part-cell:last-child { border-right: none; }
+  .part-sec-title {
+    font-size: 13pt;
+    font-weight: bold;
+    text-decoration: underline;
+    margin-bottom: 6pt;
+  }
+  .part-check-row { display: flex; align-items: center; gap: 6pt; margin-bottom: 4pt; }
+  .part-write-line {
+    border-bottom: 1pt dotted #555;
+    height: 16pt;
+    margin-bottom: 3pt;
+    font-size: 12pt;
+    display: flex;
+    align-items: flex-end;
+    padding-left: 2pt;
+  }
+  .part-sign {
+    font-size: 12pt;
+    line-height: 1.7;
+    margin-top: 8pt;
+  }
+  .part-sign-line {
+    display: inline-block;
+    border-bottom: 1pt dotted #555;
+    width: 100pt;
+  }
+
+  /* footer */
+  .footer {
+    font-size: 11pt;
+    color: #555;
+    text-align: center;
+    margin-top: 10pt;
+    position: absolute;
+    bottom: 8mm;
+    left: 18mm;
+    right: 18mm;
+  }
+
+  /* image */
+  .img-block { margin: 6pt 0; }
+  .img-block img { max-width: 180pt; max-height: 130pt; border: 1pt solid #ccc; }
+  .img-block p { font-size: 12pt; margin-bottom: 3pt; }
+
+  @media print {
+    @page { size: A4; margin: 0; }
+    body { -webkit-print-color-adjust: exact; }
+    .page { padding: 15mm 18mm 20mm 18mm; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ===== HEADER ===== -->
+  <div class="header-wrap">
+    <!-- Logo placeholder (จะซ่อนถ้าโหลดไม่ได้) -->
+    <img class="logo"
+      src="https://upload.wikimedia.org/wikipedia/th/thumb/5/5b/Mahidol_University_Logo.svg/200px-Mahidol_University_Logo.svg.png"
+      onerror="this.style.visibility='hidden'" alt="logo" />
+
+    <div class="header-center">
+      <div class="hospital-name">ศูนย์การแพทย์กาญจนาภิเษก</div>
+      <div class="form-title">แบบฟอร์มแจ้งงานกล้องวงจรปิด CCTV และ ระบบเข้า-ออก Access Control</div>
+    </div>
+
     <div class="ref-box">
-      <div>เลขที่.............................................</div>
-      <div>ลงรับวันที่.......................................</div>
-      <div>ผู้รับเรื่อง.........................................</div>
-    </div>
-    <div class="header">
-      <p style="font-size:13px;">ศูนย์การแพทย์กาญจนาภิเษก</p>
-      <h2>แบบฟอร์มแจ้งงานกล้องวงจรปิด CCTV และ ระบบเข้า-ออก Access Control</h2>
-    </div>
-    <div class="clear"></div>
-
-    <div class="section-title">ส่วนที่ 1 (สำหรับหน่วยงาน)</div>
-    <p style="font-size:13px;margin-bottom:6px;">เรียน หัวหน้างานอาคารสถานที่และยานพาหนะ</p>
-    <div class="field-row">
-      <span class="field-label">ข้าพเจ้า</span>
-      <span class="field-line long">${r.reporter||''}</span>
-      <span class="field-label">ตำแหน่ง</span>
-      <span class="field-line">${r.position||''}</span>
-      <span class="field-label">แผนก</span>
-      <span class="field-line">${r.department||''}</span>
-    </div>
-    <div class="field-row">
-      <span class="field-label">หน่วยงาน</span>
-      <span class="field-line long">${r.unit||''}</span>
-      <span class="field-label">ชั้น</span>
-      <span class="field-line">${r.floor||''}</span>
-      <span class="field-label">โทรศัพท์</span>
-      <span class="field-line">${r.phone||''}</span>
-    </div>
-
-    <div class="section-title">ส่วนที่ 1 (แจ้งความประสงค์ เพื่อดำเนินการหรือซ่อมแซม)</div>
-    <div class="field-row" style="margin-bottom:8px;">
-      <span class="field-label">ประเภทงาน</span>
-      <span style="font-size:13px;margin-right:14px;">${r.jobType==='กล้องวงจรปิด'?'☑':'☐'} กล้องวงจรปิด</span>
-      <span style="font-size:13px;margin-right:14px;">${r.jobType==='Access Control'?'☑':'☐'} ระบบ Access Control</span>
-      <span style="font-size:13px;">${r.jobType==='อื่นๆ'?'☑':'☐'} อื่นๆ</span>
-    </div>
-    <div style="font-size:13px;margin:4px 0 2px;">รายละเอียดของงาน (โปรดระบุ)</div>
-    <div class="dotted-line">${r.detail||''}</div>
-    <div class="dotted-line"></div>
-    <div class="dotted-line"></div>
-    <div class="field-row" style="margin-top:8px;">
-      <span class="field-label">โดยประสานงานกับ</span>
-      <span class="field-line long">${r.coordinator||''}</span>
-    </div>
-    ${r.image ? `<div class="img-area"><p style="font-size:12px;margin-bottom:2px;">รูปภาพประกอบ:</p><img src="${r.image}" /></div>` : ''}
-
-    <div class="sign-area">
-      <div>ลงชื่อ <span class="sign-line"></span> ผู้แจ้งงาน</div>
-      <div>(${r.reporter||'...................................'})</div>
-      <div>ตำแหน่ง ${r.position||'..............................'}</div>
-      <div>วันที่ ${r.date||'........./........./.........'}</div>
-    </div>
-
-    <div class="section-title" style="margin-top:14px;">ส่วนที่ 2 (สำหรับเจ้าหน้าที่บันทึกข้อมูลการปฏิบัติงาน)</div>
-    <div style="font-size:13px;margin-bottom:2px;">สรุปผล :</div>
-    <div class="dotted-line">${r.summary||''}</div>
-    <div class="dotted-line"></div>
-    <div class="dotted-line"></div>
-    <div class="sign-area">
-      <div>ลงชื่อ <span class="sign-line"></span> ผู้ปฏิบัติงาน</div>
-      <div>(....................................................)</div>
-      <div>วันที่ ${r.doneDate||'........./........./.........'}</div>
-    </div>
-
-    <div class="part-grid">
-      <div class="part-box">
-        <div class="part-title">ส่วนที่ 3 (หน่วยงานพิจารณาตรวจรับงาน)</div>
-        <div style="font-size:13px;line-height:2;">☐ ตรวจรับผ่าน<br/>☐ ตรวจรับไม่ผ่าน เนื่องจาก</div>
-        <div class="dotted-line"></div><div class="dotted-line"></div>
-        <div style="font-size:12px;margin-top:16px;line-height:2;">
-          ลงชื่อ <span style="border-bottom:1px dotted #555;display:inline-block;width:100px;"></span><br/>
-          (......................................)<br/>
-          ตำแหน่ง..............................<br/>
-          วันที่ ...../...../....
-        </div>
+      <div class="ref-row">
+        <span class="ref-label">เลขที่</span>
+        <span class="ref-val-line"></span>
       </div>
-      <div class="part-box">
-        <div class="part-title">ส่วนที่ 4 (หัวหน้างานอาคารสถานที่และยานพาหนะ)</div>
-        <div style="font-size:13px;line-height:2;">☐ รับทราบ<br/>☐ อื่นๆ</div>
-        <div class="dotted-line"></div><div class="dotted-line"></div>
-        <div style="font-size:12px;margin-top:16px;line-height:2;">
-          ลงชื่อ <span style="border-bottom:1px dotted #555;display:inline-block;width:100px;"></span><br/>
-          (นายชัชชัย เกตุแก้ว)<br/>
-          หัวหน้างานอาคารสถานที่และยานพาหนะ<br/>
-          วันที่ ...../...../....
-        </div>
+      <div class="ref-row">
+        <span class="ref-label">ลงรับวันที่</span>
+        <span class="ref-val-line"></span>
+      </div>
+      <div class="ref-row">
+        <span class="ref-label">ผู้รับเรื่อง</span>
+        <span class="ref-val-line"></span>
       </div>
     </div>
-
-    <p style="font-size:11px;text-align:center;margin-top:14px;color:#555;">
-      รหัส : FM-BD-009 &nbsp;|&nbsp; วันที่อนุมัติ : 11 ตุลาคม 2567 &nbsp;|&nbsp; หน้าที่ 1 จาก 1
-    </p>
   </div>
-  <script>window.onload=function(){window.print();}<\/script>
-  </body></html>`);
+
+  <div class="hline"></div>
+
+  <!-- ===== ส่วนที่ 1 สำหรับหน่วยงาน ===== -->
+  <div class="sec-title">ส่วนที่ 1&nbsp; (สำหรับหน่วยงาน)</div>
+  <div style="font-size:14pt;margin-bottom:6pt;">เรียน&nbsp; หัวหน้างานอาคารสถานที่และยานพาหนะ</div>
+
+  <!-- แถว 1: ข้าพเจ้า / ตำแหน่ง / แผนก -->
+  <div class="field-line-block">
+    <span class="fl-label">ข้าพเจ้า</span>
+    <span class="fl-val wide">${r.reporter||''}</span>
+    <span class="fl-label">ตำแหน่ง</span>
+    <span class="fl-val medium">${r.position||''}</span>
+    <span class="fl-label">แผนก</span>
+    <span class="fl-val medium">${r.department||''}</span>
+  </div>
+
+  <!-- แถว 2: หน่วยงาน / ชั้น / โทรศัพท์ -->
+  <div class="field-line-block">
+    <span class="fl-label">หน่วยงาน</span>
+    <span class="fl-val wide">${r.unit||''}</span>
+    <span class="fl-label">ชั้น</span>
+    <span class="fl-val narrow">${r.floor||''}</span>
+    <span class="fl-label">โทรศัพท์</span>
+    <span class="fl-val medium">${r.phone||''}</span>
+  </div>
+
+  <!-- ===== ส่วนที่ 1 แจ้งความประสงค์ ===== -->
+  <div class="sec-title">ส่วนที่ 1&nbsp; (แจ้งความประสงค์ เพื่อดำเนินการหรือซ่อมแซม)</div>
+
+  <!-- ประเภทงาน -->
+  <div class="check-row">
+    <span style="flex-shrink:0;font-size:14pt;">ประเภทงาน</span>
+    <span class="check-item">
+      <span class="checkbox">${r.jobType==='กล้องวงจรปิด'?'✓':''}</span>
+      <span>กล้องวงจรปิด</span>
+    </span>
+    <span class="check-item">
+      <span class="checkbox">${r.jobType==='Access Control'?'✓':''}</span>
+      <span>ระบบ Access Control</span>
+    </span>
+    <span class="check-item">
+      <span class="checkbox">${r.jobType==='อื่นๆ'?'✓':''}</span>
+      <span>อื่นๆ &nbsp;${r.jobType==='อื่นๆ'?'':'…………………………………………………'}</span>
+    </span>
+  </div>
+
+  <!-- รายละเอียดของงาน -->
+  <div class="write-line-label">รายละเอียดของงาน (โปรดระบุ)</div>
+  <div class="write-line">${r.detail||''}</div>
+  <div class="write-line"></div>
+  <div class="write-line"></div>
+
+  <!-- โดยประสานงานกับ -->
+  <div class="field-line-block" style="margin-top:4pt;">
+    <span class="fl-label">โดยประสานงานกับ</span>
+    <span class="fl-val">${r.coordinator||''}</span>
+  </div>
+
+  ${r.image ? `
+  <div class="img-block">
+    <p>รูปภาพประกอบ:</p>
+    <img src="${r.image}" />
+  </div>` : '<div style="height:14pt"></div>'}
+
+  <!-- Signature ผู้แจ้งงาน -->
+  <div class="sign-block">
+    ลงชื่อ&nbsp;<span class="sign-dotted">&nbsp;</span>&nbsp;ผู้แจ้งงาน<br/>
+    (<span style="display:inline-block;width:200pt;border-bottom:1pt dotted #555;text-align:center;">${r.reporter||''}</span>)<br/>
+    ตำแหน่ง&nbsp;<span style="display:inline-block;width:160pt;border-bottom:1pt dotted #555;text-align:left;padding-left:4pt;">${r.position||''}</span><br/>
+    วันที่&nbsp;&nbsp;${toSlash(r.date)}
+  </div>
+
+  <!-- ===== ส่วนที่ 2 ===== -->
+  <div class="sec-title" style="margin-top:12pt;">ส่วนที่ 2&nbsp; (สำหรับเจ้าหน้าที่บันทึกข้อมูลการปฏิบัติงาน)</div>
+
+  <div style="font-size:14pt;margin-bottom:3pt;">สรุปผล&nbsp;:</div>
+  <div class="write-line">${r.summary||''}</div>
+  <div class="write-line"></div>
+  <div class="write-line"></div>
+
+  <!-- Signature ผู้ปฏิบัติงาน -->
+  <div class="sign-block">
+    ลงชื่อ&nbsp;<span class="sign-dotted">&nbsp;</span>&nbsp;ผู้ปฏิบัติงาน<br/>
+    (<span style="display:inline-block;width:200pt;border-bottom:1pt dotted #555;">&nbsp;</span>)<br/>
+    วันที่&nbsp;&nbsp;${toSlash(r.doneDate)}
+  </div>
+
+  <!-- ===== ส่วนที่ 3 & 4 ===== -->
+  <div class="part-grid">
+    <div class="part-cell">
+      <div class="part-sec-title">ส่วนที่ 3&nbsp; (หน่วยงานพิจารณาตรวจรับงาน)</div>
+      <div class="part-check-row">
+        <span class="checkbox" style="width:10pt;height:10pt;border:1pt solid #000;display:inline-flex;align-items:center;justify-content:center;font-size:11pt;flex-shrink:0;">&nbsp;</span>
+        <span>ตรวจรับผ่าน</span>
+      </div>
+      <div class="part-check-row">
+        <span class="checkbox" style="width:10pt;height:10pt;border:1pt solid #000;display:inline-flex;align-items:center;justify-content:center;font-size:11pt;flex-shrink:0;">&nbsp;</span>
+        <span>ตรวจรับไม่ผ่าน เนื่องจาก</span>
+      </div>
+      <div class="part-write-line"></div>
+      <div class="part-write-line"></div>
+      <div class="part-sign">
+        ลงชื่อ&nbsp;<span class="part-sign-line">&nbsp;</span><br/>
+        (<span style="display:inline-block;width:100pt;border-bottom:1pt dotted #555;">&nbsp;</span>)<br/>
+        ตำแหน่ง&nbsp;<span style="display:inline-block;width:90pt;border-bottom:1pt dotted #555;">&nbsp;</span><br/>
+        วันที่ &nbsp;............../................/..........
+      </div>
+    </div>
+    <div class="part-cell">
+      <div class="part-sec-title">ส่วนที่ 4&nbsp; (หัวหน้างานอาคารสถานที่และยานพาหนะ)</div>
+      <div class="part-check-row">
+        <span class="checkbox" style="width:10pt;height:10pt;border:1pt solid #000;display:inline-flex;align-items:center;justify-content:center;font-size:11pt;flex-shrink:0;">&nbsp;</span>
+        <span>รับทราบ</span>
+      </div>
+      <div class="part-check-row">
+        <span class="checkbox" style="width:10pt;height:10pt;border:1pt solid #000;display:inline-flex;align-items:center;justify-content:center;font-size:11pt;flex-shrink:0;">&nbsp;</span>
+        <span>อื่นๆ</span>
+      </div>
+      <div class="part-write-line"></div>
+      <div class="part-write-line"></div>
+      <div class="part-sign">
+        ลงชื่อ&nbsp;<span class="part-sign-line">&nbsp;</span><br/>
+        (นายชัชชัย&nbsp; เกตุแก้ว)<br/>
+        หัวหน้างานอาคารสถานที่และยานพาหนะ<br/>
+        วันที่ &nbsp;............../................/..........
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    รหัส : FM-BD-009 &nbsp;&nbsp;|&nbsp;&nbsp; วันที่อนุมัติ : 11 ตุลาคม 2567 &nbsp;&nbsp;|&nbsp;&nbsp; หน้าที่ 1 จาก 1
+  </div>
+
+</div>
+<script>
+  window.onload = function() {
+    // รอ font และรูปโหลดเสร็จ
+    setTimeout(function(){ window.print(); }, 800);
+  };
+<\/script>
+</body>
+</html>`);
   w.document.close();
 }
 
