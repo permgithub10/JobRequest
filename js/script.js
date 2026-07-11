@@ -2,7 +2,7 @@
 //  CCTV System - Frontend Logic v3.0
 //  แก้ไข URL ด้านล่างให้ตรงกับ Web App URL ของคุณ
 // ============================================================
-const API_URL = 'https://script.google.com/macros/s/AKfycbyXS9iqlIKWFoPpUBteIrZdgjqsh4wcAKbSRP8jO0A_XwnBlI1fuYUHEUjePAhZW1In/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbw-9atCp2Wxbm9ZCYSdXNbkwRj1lL-n_BVEkjqleFK9tPY9wiZJ-y1qvdc4RZ7J8e8/exec';
 
 // ============================================================
 //  State
@@ -832,22 +832,38 @@ function printJobForm(idx) {
     return d.replace(/-/g, '/');
   }
 
-  const pdfB64 = window.FM_BD_009_PDF || '';
+  // เตรียม data
+  const data = {
+    reporter   : r.reporter    || '',
+    position   : r.position    || '',
+    department : r.department  || '',
+    unit       : r.unit        || '',
+    floor      : r.floor       || '',
+    phone      : r.phone       || '',
+    jobType    : r.jobType     || '',
+    detail     : r.detail      || '',
+    coordinator: r.coordinator || '',
+    summary    : r.summary     || '',
+    date       : toSlash(r.date)     || '',
+    doneDate   : toSlash(r.doneDate) || ''
+  };
 
-  const rJ   = JSON.stringify(r.reporter    || '');
-  const poJ  = JSON.stringify(r.position    || '');
-  const dpJ  = JSON.stringify(r.department  || '');
-  const unJ  = JSON.stringify(r.unit        || '');
-  const flJ  = JSON.stringify(r.floor       || '');
-  const phJ  = JSON.stringify(r.phone       || '');
-  const jtJ  = JSON.stringify(r.jobType     || '');
-  const deJ  = JSON.stringify(r.detail      || '');
-  const coJ  = JSON.stringify(r.coordinator || '');
-  const suJ  = JSON.stringify(r.summary     || '');
-  const daJ  = JSON.stringify(toSlash(r.date)     || '');
-  const ddJ  = JSON.stringify(toSlash(r.doneDate) || '');
+  // เก็บ data ใน sessionStorage เพื่อส่งไป popup
+  try {
+    sessionStorage.setItem('printData', JSON.stringify(data));
+    sessionStorage.setItem('printPDF',  window.FM_BD_009_PDF || '');
+  } catch(e) {
+    console.warn('sessionStorage error:', e);
+  }
 
-  const html = `<!DOCTYPE html>
+  // เปิด popup แล้วโหลด print page
+  const w = window.open('', '_blank', 'width=960,height=1100');
+  w.document.write(buildPrintHTML());
+  w.document.close();
+}
+
+function buildPrintHTML() {
+  return `<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8"/>
@@ -857,239 +873,156 @@ function printJobForm(idx) {
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#606060;font-family:'Sarabun',sans-serif;}
-.no-print{background:#333;color:#fff;padding:10px 16px;display:flex;gap:10px;align-items:center;position:sticky;top:0;z-index:99;}
+.no-print{background:#333;color:#fff;padding:10px 16px;display:flex;gap:10px;align-items:center;position:sticky;top:0;z-index:99;flex-wrap:wrap;}
 .no-print button{padding:6px 20px;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;}
 .btn-p{background:#1a6dd4;color:#fff;}
 .btn-c{background:#666;color:#fff;}
-/* wrapper จำลอง A4 */
-.a4-wrap{
-  width:210mm;
-  margin:16px auto;
-  background:#fff;
-  position:relative;
-  box-shadow:0 4px 24px rgba(0,0,0,.5);
-}
-.a4-wrap img.bg{
-  width:100%;
-  display:block;
-}
-/* overlay สำหรับวาง text */
-.overlay{
-  position:absolute;
-  top:0;left:0;right:0;bottom:0;
-  pointer-events:none;
-}
-/* text items — ใช้ position:absolute + % */
-.f{
-  position:absolute;
-  font-family:'Sarabun',sans-serif;
-  font-size:clamp(8px, 1.55vw, 12px);
-  color:#000;
-  white-space:nowrap;
-  line-height:1;
-}
-.tick{
-  position:absolute;
-  font-size:clamp(10px, 1.8vw, 14px);
-  color:#000;
-  font-weight:bold;
-  transform:translate(-50%,-50%);
-}
-.f-wrap{
-  position:absolute;
-  font-family:'Sarabun',sans-serif;
-  font-size:clamp(8px, 1.55vw, 12px);
-  color:#000;
-  line-height:1.5;
-  word-break:break-all;
-}
+.hint{font-size:12px;opacity:.7;}
+.a4-wrap{width:210mm;margin:12px auto;background:#fff;position:relative;box-shadow:0 4px 24px rgba(0,0,0,.5);}
+.a4-wrap img.bg{width:100%;display:block;}
+.overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;}
+.f{position:absolute;font-family:'Sarabun',sans-serif;font-size:clamp(7px,1.48vw,11pt);color:#000;white-space:nowrap;line-height:1;}
+.tick{position:absolute;font-size:clamp(9px,1.7vw,13pt);color:#000;font-weight:bold;transform:translate(-50%,-50%);}
+.fc{position:absolute;font-family:'Sarabun',sans-serif;font-size:clamp(7px,1.48vw,11pt);color:#000;white-space:nowrap;line-height:1;transform:translateX(-50%);}
+#status-msg{color:#fff;padding:40px;text-align:center;font-size:16px;}
 @media print{
   @page{size:A4 portrait;margin:0;}
   body{background:#fff;}
   .no-print{display:none!important;}
-  .a4-wrap{
-    width:210mm;
-    margin:0;
-    box-shadow:none;
-    page-break-inside:avoid;
-  }
-  .f, .tick, .f-wrap{
-    font-size:10.5pt;
-  }
+  .a4-wrap{width:210mm;margin:0;box-shadow:none;}
+  .f,.tick,.fc{font-size:10.5pt!important;}
 }
 </style>
 </head>
 <body>
 <div class="no-print">
-  <span style="font-size:15px;font-weight:700;">📄 FM-BD-009 — ${r.reporter||''}</span>
-  <button class="btn-p" id="btnPrint" onclick="window.print()" disabled style="opacity:.5;cursor:not-allowed;">⏳ กำลังเตรียมเอกสาร...</button>
+  <span style="font-size:15px;font-weight:700;">📄 FM-BD-009</span>
+  <button class="btn-p" onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button>
   <button class="btn-c" onclick="window.close()">✕ ปิด</button>
-  <span style="font-size:12px;opacity:.7;">💡 ตั้งค่า: กระดาษ A4 | Scale 100% | Margin: None</span>
+  <span class="hint">💡 ตั้งค่า: A4 | Scale 100% | Margin: None</span>
 </div>
-
 <div class="a4-wrap" id="a4">
-  <img class="bg" id="bgImg" src="" alt="form"/>
+  <div id="status-msg">⏳ กำลังโหลดเอกสาร...</div>
+  <img class="bg" id="bgImg" alt="" style="display:none;"/>
   <div class="overlay" id="ov"></div>
 </div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"><\/script>
 <script>
-const DATA = {
-  reporter   : ${rJ},
-  position   : ${poJ},
-  department : ${dpJ},
-  unit       : ${unJ},
-  floor      : ${flJ},
-  phone      : ${phJ},
-  jobType    : ${jtJ},
-  detail     : ${deJ},
-  coordinator: ${coJ},
-  summary    : ${suJ},
-  date       : ${daJ},
-  doneDate   : ${ddJ}
-};
-
-const PDF_B64 = window._pdfB64;
-
-// แปลง PDF → PNG แล้วใส่เป็น bg image
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+// อ่านข้อมูลจาก opener (parent window) หรือ sessionStorage
+let DATA = {}, PDF_B64 = '';
+try {
+  // วิธี 1: อ่านจาก opener window โดยตรง (ถ้าอยู่ domain เดียวกัน)
+  if (window.opener && window.opener.sessionStorage) {
+    DATA    = JSON.parse(window.opener.sessionStorage.getItem('printData') || '{}');
+    PDF_B64 = window.opener.sessionStorage.getItem('printPDF') || '';
+  }
+  // วิธี 2: อ่านจาก sessionStorage ตัวเอง (ถ้า share storage)
+  if (!PDF_B64) {
+    DATA    = JSON.parse(sessionStorage.getItem('printData') || '{}');
+    PDF_B64 = sessionStorage.getItem('printPDF') || '';
+  }
+} catch(e) { console.warn('read error', e); }
+
 async function init() {
-  // โหลด PDF แล้ว render เป็น PNG
-  const bytes = Uint8Array.from(atob(PDF_B64), c => c.charCodeAt(0));
-  const pdf   = await pdfjsLib.getDocument({data: bytes}).promise;
-  const page  = await pdf.getPage(1);
-  const SCALE = 2.0;
-  const vp    = page.getViewport({scale: SCALE});
+  if (!PDF_B64) {
+    document.getElementById('status-msg').textContent =
+      '❌ โหลด PDF ไม่สำเร็จ — กรุณาปิดแล้วลองใหม่';
+    return;
+  }
+  try {
+    const bytes = Uint8Array.from(atob(PDF_B64), c => c.charCodeAt(0));
+    const pdf   = await pdfjsLib.getDocument({data: bytes}).promise;
+    const page  = await pdf.getPage(1);
+    const vp    = page.getViewport({scale: 2.0});
 
-  const offscreen = document.createElement('canvas');
-  offscreen.width  = vp.width;
-  offscreen.height = vp.height;
-  await page.render({canvasContext: offscreen.getContext('2d'), viewport: vp}).promise;
+    const canvas = document.createElement('canvas');
+    canvas.width  = vp.width;
+    canvas.height = vp.height;
+    await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
 
-  // ใส่เป็น background image
-  const dataURL = offscreen.toDataURL('image/png');
-  document.getElementById('bgImg').src = dataURL;
-
-  // รอ image โหลดแล้ว render overlay
-  document.getElementById('bgImg').onload = renderOverlay;
+    const bgImg = document.getElementById('bgImg');
+    bgImg.src = canvas.toDataURL('image/png');
+    bgImg.style.display = 'block';
+    document.getElementById('status-msg').style.display = 'none';
+    bgImg.onload = renderOverlay;
+  } catch(err) {
+    document.getElementById('status-msg').textContent = '❌ Error: ' + err.message;
+    console.error(err);
+  }
 }
 
 function renderOverlay() {
-  const ov  = document.getElementById('ov');
-  const a4  = document.getElementById('a4');
+  const ov = document.getElementById('ov');
   ov.innerHTML = '';
 
-  // helper: สร้าง element ที่ตำแหน่ง % ของ a4
-  function place(xPct, yPct, text, cls='f') {
+  function el(xPct, yPct, text, cls) {
     if (!text) return;
-    const el = document.createElement('span');
-    el.className = cls;
-    el.textContent = text;
-    el.style.left = xPct + '%';
-    el.style.top  = yPct + '%';
-    ov.appendChild(el);
+    const s = document.createElement('span');
+    s.className = cls || 'f';
+    s.textContent = text;
+    s.style.left = xPct + '%';
+    s.style.top  = yPct + '%';
+    ov.appendChild(s);
   }
 
-  function placeTick(xPct, yPct) {
-    const el = document.createElement('span');
-    el.className = 'tick';
-    el.textContent = '✓';
-    el.style.left = xPct + '%';
-    el.style.top  = yPct + '%';
-    ov.appendChild(el);
+  function tick(xPct, yPct) {
+    el(xPct, yPct, '✓', 'tick');
   }
 
-  // ── ส่วนที่ 1: ข้อมูลผู้แจ้ง ──
-  place(17.16, 34.72, DATA.reporter);
-  place(49.96, 34.72, DATA.position);
-  place(76.55, 34.72, DATA.department);
+  // ── ส่วนที่ 1 ──
+  el(17.16, 34.72, DATA.reporter);
+  el(49.96, 34.72, DATA.position);
+  el(76.55, 34.72, DATA.department);
+  el(18.94, 38.31, DATA.unit);
+  el(55.20, 38.31, DATA.floor);
+  el(72.12, 38.31, DATA.phone);
 
-  place(18.94, 38.31, DATA.unit);
-  place(55.20, 38.31, DATA.floor);
-  place(72.12, 38.31, DATA.phone);
+  // checkbox
+  if (DATA.jobType === 'กล้องวงจรปิด')  tick(18.78, 49.03);
+  if (DATA.jobType === 'Access Control') tick(41.18, 49.03);
+  if (DATA.jobType === 'อื่นๆ')          tick(59.15, 49.03);
 
-  // ── Checkbox ประเภทงาน ──
-  if (DATA.jobType === 'กล้องวงจรปิด')  placeTick(18.78, 49.03);
-  if (DATA.jobType === 'Access Control') placeTick(41.18, 49.03);
-  if (DATA.jobType === 'อื่นๆ')          placeTick(59.15, 49.03);
+  // รายละเอียด (แบ่งบรรทัด ~55 chars)
+  const dLines = chunkText(DATA.detail, 55);
+  el( 7.33, 54.28, dLines[0]);
+  el( 7.33, 58.27, dLines[1]);
+  el( 7.33, 62.14, dLines[2]);
 
-  // ── รายละเอียดของงาน (wrap ยาว → แบ่ง 3 บรรทัด) ──
-  const dLines = splitLines(DATA.detail, 78);
-  place( 7.33, 54.28, dLines[0] || '');
-  place( 7.33, 58.27, dLines[1] || '');
-  place( 7.33, 62.14, dLines[2] || '');
+  // ประสานงาน
+  el(26.59, 65.85, DATA.coordinator);
 
-  // ── โดยประสานงานกับ ──
-  place(26.59, 65.85, DATA.coordinator);
+  // signature ผู้แจ้ง — ชื่อ center
+  el(69.62, 75.14, DATA.reporter, 'fc');
+  el(58.82, 77.82, DATA.position);
+  el(58.82, 79.82, DATA.date);
 
-  // ── Signature ผู้แจ้ง ──
-  // ชื่อ (center-align)
-  const nameEl = document.createElement('span');
-  nameEl.className = 'f';
-  nameEl.textContent = DATA.reporter;
-  nameEl.style.left = '69.62%';
-  nameEl.style.top  = '75.14%';
-  nameEl.style.transform = 'translateX(-50%)';
-  ov.appendChild(nameEl);
-
-  place(58.82, 77.82, DATA.position);
-  place(58.82, 79.82, DATA.date);
-
-  // ── ส่วนที่ 2: สรุปผล ──
-  const sLines = splitLines(DATA.summary, 78);
-  place( 7.33, 84.95, sLines[0] || '');
-  place( 7.33, 88.83, sLines[1] || '');
-  place( 7.33, 92.13, sLines[2] || '');
-
-  // วันที่เสร็จ
-  place(58.82, 96.69, DATA.doneDate);
-
-  // รอให้ browser วาด/จัด layout ตัวอักษรไทย (สระ/วรรณยุกต์) ให้เสถียรก่อน
-  // ค่อยเปิดปุ่มพิมพ์ — ป้องกันปัญหาตัวอักษรซ้อน/ไม่ตรงจากการกด print เร็วเกินไป
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const btn = document.getElementById('btnPrint');
-        if (btn) {
-          btn.disabled = false;
-          btn.style.opacity = '1';
-          btn.style.cursor = 'pointer';
-          btn.textContent = '🖨️ พิมพ์ / บันทึก PDF';
-        }
-      }, 150);
-    });
-  });
+  // ── ส่วนที่ 2 ──
+  const sLines = chunkText(DATA.summary, 55);
+  el( 7.33, 84.95, sLines[0]);
+  el( 7.33, 88.83, sLines[1]);
+  el( 7.33, 92.13, sLines[2]);
+  el(58.82, 96.69, DATA.doneDate);
 }
 
-// แบ่งข้อความเป็น chunks ตามความยาว char (ประมาณ)
-function splitLines(text, charsPerLine) {
-  if (!text) return ['', '', ''];
+function chunkText(text, size) {
+  if (!text) return ['','',''];
   const lines = [];
-  let i = 0;
-  while (i < text.length && lines.length < 3) {
-    lines.push(text.slice(i, i + charsPerLine));
-    i += charsPerLine;
-  }
+  for (let i = 0; i < text.length && lines.length < 3; i += size)
+    lines.push(text.slice(i, i + size));
   while (lines.length < 3) lines.push('');
   return lines;
 }
 
-// load pdf.js แล้ว init
-const s = document.createElement('script');
-s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-s.onload = () => document.fonts.ready.then(init);
-document.head.appendChild(s);
+// รอ font โหลด
+document.fonts.ready.then(init).catch(console.error);
 <\/script>
 </body>
 </html>`;
-
-
-  const w = window.open('', '_blank', 'width=960,height=1100');
-  w._pdfB64 = pdfB64;
-  w.document.write(html);
-  w.document.close();
 }
+
 
 
 
