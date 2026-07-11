@@ -832,7 +832,7 @@ function printJobForm(idx) {
     return d.replace(/-/g, '/');
   }
 
-  const pngB64 = window.FM_BD_009_PNG || '';
+  const pdfB64 = window.FM_BD_009_PDF || '';
 
   const rJ   = JSON.stringify(r.reporter    || '');
   const poJ  = JSON.stringify(r.position    || '');
@@ -922,7 +922,7 @@ body{background:#606060;font-family:'Sarabun',sans-serif;}
 <body>
 <div class="no-print">
   <span style="font-size:15px;font-weight:700;">📄 FM-BD-009 — ${r.reporter||''}</span>
-  <button class="btn-p" onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button>
+  <button class="btn-p" id="btnPrint" onclick="window.print()" disabled style="opacity:.5;cursor:not-allowed;">⏳ กำลังเตรียมเอกสาร...</button>
   <button class="btn-c" onclick="window.close()">✕ ปิด</button>
   <span style="font-size:12px;opacity:.7;">💡 ตั้งค่า: กระดาษ A4 | Scale 100% | Margin: None</span>
 </div>
@@ -948,10 +948,30 @@ const DATA = {
   doneDate   : ${ddJ}
 };
 
-const PNG_B64 = "${pngB64}";
+const PDF_B64 = window._pdfB64;
 
-function init() {
-  document.getElementById('bgImg').src = 'data:image/png;base64,' + PNG_B64;
+// แปลง PDF → PNG แล้วใส่เป็น bg image
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+async function init() {
+  // โหลด PDF แล้ว render เป็น PNG
+  const bytes = Uint8Array.from(atob(PDF_B64), c => c.charCodeAt(0));
+  const pdf   = await pdfjsLib.getDocument({data: bytes}).promise;
+  const page  = await pdf.getPage(1);
+  const SCALE = 2.0;
+  const vp    = page.getViewport({scale: SCALE});
+
+  const offscreen = document.createElement('canvas');
+  offscreen.width  = vp.width;
+  offscreen.height = vp.height;
+  await page.render({canvasContext: offscreen.getContext('2d'), viewport: vp}).promise;
+
+  // ใส่เป็น background image
+  const dataURL = offscreen.toDataURL('image/png');
+  document.getElementById('bgImg').src = dataURL;
+
+  // รอ image โหลดแล้ว render overlay
   document.getElementById('bgImg').onload = renderOverlay;
 }
 
@@ -1024,6 +1044,22 @@ function renderOverlay() {
 
   // วันที่เสร็จ
   place(58.82, 96.69, DATA.doneDate);
+
+  // รอให้ browser วาด/จัด layout ตัวอักษรไทย (สระ/วรรณยุกต์) ให้เสถียรก่อน
+  // ค่อยเปิดปุ่มพิมพ์ — ป้องกันปัญหาตัวอักษรซ้อน/ไม่ตรงจากการกด print เร็วเกินไป
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const btn = document.getElementById('btnPrint');
+        if (btn) {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+          btn.textContent = '🖨️ พิมพ์ / บันทึก PDF';
+        }
+      }, 150);
+    });
+  });
 }
 
 // แบ่งข้อความเป็น chunks ตามความยาว char (ประมาณ)
@@ -1039,13 +1075,18 @@ function splitLines(text, charsPerLine) {
   return lines;
 }
 
-document.fonts.ready.then(init);
+// load pdf.js แล้ว init
+const s = document.createElement('script');
+s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+s.onload = () => document.fonts.ready.then(init);
+document.head.appendChild(s);
 <\/script>
 </body>
 </html>`;
 
 
   const w = window.open('', '_blank', 'width=960,height=1100');
+  w._pdfB64 = pdfB64;
   w.document.write(html);
   w.document.close();
 }
