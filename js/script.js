@@ -948,7 +948,7 @@ const DATA = {
   doneDate   : ${ddJ}
 };
 
-const PDF_B64 = window._pdfB64;
+const PDF_B64 = "${pdfB64}";
 
 // แปลง PDF → PNG แล้วใส่เป็น bg image
 pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -1070,7 +1070,6 @@ document.head.appendChild(s);
 
 
   const w = window.open('', '_blank', 'width=960,height=1100');
-  w._pdfB64 = pdfB64;
   w.document.write(html);
   w.document.close();
 }
