@@ -2,7 +2,7 @@
 //  CCTV System - Frontend Logic v3.0
 //  แก้ไข URL ด้านล่างให้ตรงกับ Web App URL ของคุณ
 // ============================================================
-const API_URL = 'https://script.google.com/macros/s/AKfycbw-9atCp2Wxbm9ZCYSdXNbkwRj1lL-n_BVEkjqleFK9tPY9wiZJ-y1qvdc4RZ7J8e8/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzyMEYcWuSbUfvWIxGA64-cO-8XLKbDyquWKRfW-8nJ3Rgm-ItGxVqUmkWTxSB-JSPd/exec';
 
 // ============================================================
 //  State
